@@ -3,7 +3,8 @@
 set -e
 set -x
 
-if [ "$1" == "" ]; then
+MODEL=$1
+if [ "$MODEL" == "" ]; then
   2>&1 "Unspecified model, bailing"
   exit 1
 fi
@@ -54,7 +55,7 @@ sed -i 's|"${distro_id}:${distro_codename}-security";|//"${distro_id}:${distro_c
 # need to skip the flash kernel step b/c we build on non-pi devices
 export FLASH_KERNEL_SKIP=1
 
-apt update && apt install -o Dpkg::Options::="--force-confold" -y sysstat htop iftop iotop jq screen bridge-utils rsyslog logrotate crda iw wireless-tools wpasupplicant wireless-regdb curl iptables aufs-tools docker.io plymouth plymouth-label plymouth-themes snapd
+apt update && apt install -o Dpkg::Options::="--force-confold" -y sysstat htop iftop iotop jq screen bridge-utils rsyslog logrotate crda iw wireless-tools wpasupplicant wireless-regdb curl iptables aufs-tools docker.io plymouth plymouth-label plymouth-themes snapd binutils
 
 # do upgrades
 apt upgrade -y
@@ -64,6 +65,12 @@ unattended-upgrade
 
 # prevent the user from accidentally upgrading the kernel with apt upgrade command
 apt-mark hold linux-headers-raspi2 linux-image-raspi2 linux-raspi2 linux-firmware linux-firmware-raspi2
+
+if [ "$MODEL" == "pi3" ]; then
+    # support broadcom driver for the pi3 built-in wifi 
+    cd /lib/firmware/brcm/
+    wget https://raw.githubusercontent.com/RPi-Distro/firmware-nonfree/master/brcm80211/brcm/brcmfmac43430-sdio.txt
+fi
 
 echo "$TMP_HOSTNAME" > /etc/hostname
 sed "/127.0.1.1/d" -i /etc/hosts
